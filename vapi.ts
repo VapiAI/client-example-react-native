@@ -7,7 +7,6 @@ import Daily, {
   DailyEvent,
   DailyEventObject,
   DailyEventObjectAppMessage,
-  DailyEventObjectAvailableDevicesUpdated,
   DailyEventObjectTrack,
   DailyTrackState,
   MediaDeviceInfo,
@@ -28,11 +27,13 @@ export interface ControlMessages {
 
 type VapiClientToServerMessage = AddMessageMessage | ControlMessages;
 
-type VapiEventNames = 'call-end' | 'call-start' | 'message' | 'error';
+type VapiEventNames = 'call-end' | 'call-start' | 'speech-start' | 'speech-end' | 'message' | 'error';
 
 type VapiEventListeners = {
   'call-end': () => void;
   'call-start': () => void;
+  'speech-start': () => void;
+  'speech-end': () => void;
   playable: (track: DailyTrackState) => void;
   message: (message: any) => void;
   error: (error: any) => void;
@@ -63,14 +64,8 @@ class VapiEventEmitter extends EventEmitter {
 export default class Vapi extends VapiEventEmitter {
   private started: boolean = false;
   private call: DailyCall | null = null;
-  private callUrl: string | null = null;
-  private speakingTimeout: NodeJS.Timeout | null = null;
-  private averageSpeechLevel: number = 0;
-
-  private cameraDevicesOpen: boolean = false;
   private cameraDeviceValue: string | null = null;
   private cameraDeviceItems: any[] = [];
-  private audioDevicesOpen: boolean = false;
   private audioDeviceValue: string | null = null;
   private audioDevicesItems: any[] = [];
 
@@ -81,10 +76,22 @@ export default class Vapi extends VapiEventEmitter {
   }
 
   private async cleanup() {
+    if (!this.call) return;
+    this.removeEventListeners();
     this.started = false;
-    await this.call?.destroy();
+    await this.call.destroy();
     this.call = null;
     this.emit('call-end');
+  }
+
+  private handleRemoteSpeech(e: any) {
+    if (e?.status === 'stopped') {
+      this.emit('speech-end');
+    } else if (e?.status === 'started') {
+      this.emit('speech-start');
+    } else {
+      console.log('unhandled remote speech status', e);
+    }
   }
 
   private onAppMessage(e?: DailyEventObjectAppMessage) {
@@ -97,6 +104,9 @@ export default class Vapi extends VapiEventEmitter {
       } else {
         try {
           const parsedMessage = JSON.parse(e.data);
+          if (parsedMessage?.type === 'speech-update') {
+            this.handleRemoteSpeech(parsedMessage);
+          }
           this.emit('message', parsedMessage);
         } catch (parseError) {
           console.log('Error parsing message data: ', parseError);
@@ -109,10 +119,9 @@ export default class Vapi extends VapiEventEmitter {
 
   private onJoinedMeeting() {
     this.call?.enumerateDevices().then(({ devices }: any) => {
-      console.log('devices', devices);
       this.updateAvailableDevices(devices);
+      this.emit('call-start');
     });
-    this.emit('call-start');
   }
 
   private onTrackStarted(e: DailyEventObjectTrack | undefined) {
@@ -123,22 +132,13 @@ export default class Vapi extends VapiEventEmitter {
       e.track.kind !== 'audio' ||
       e?.participant?.user_name !== 'Vapi Speaker'
     ) {
-      console.log('not vapi speaker');
       return;
     }
-    console.log('playable');
     this.call?.sendAppMessage('playable');
-  }
-
-  private endMeeting() {
-    this.emit('call-end');
-    this.cleanup();
   }
 
   private async refreshSelectedDevice() {
     const devicesInUse = await this.call?.getInputDevices();
-
-    console.log('refreshSelectedDevice, devicesInUse', devicesInUse);
 
     const cameraDevice = devicesInUse?.camera as MediaDeviceInfo;
     if (devicesInUse && cameraDevice?.deviceId) {
@@ -162,7 +162,6 @@ export default class Vapi extends VapiEventEmitter {
   }
 
   private updateAvailableDevices(devices: MediaDeviceInfo[] | undefined) {
-    console.log('updateAvailableDevices', devices);
     const inputDevices = devices
       ?.filter((device) => device.kind === 'videoinput')
       .map((device) => {
@@ -200,27 +199,43 @@ export default class Vapi extends VapiEventEmitter {
       this.onTrackStarted(e);
     });
     this.call.on('participant-left', (e) => {
-      this.endMeeting();
+      this.cleanup();
     });
     this.call.on('left-meeting', (e) => {
-      this.endMeeting();
+      this.cleanup();
     });
 
     const events: DailyEvent[] = ['joined-meeting', 'left-meeting', 'error'];
-    const handleNewMeetingState = (_event?: DailyEventObject) => {
+    const handleNewMeetingState = async (_event?: DailyEventObject) => {
       switch (this.call?.meetingState()) {
         case 'joined-meeting':
           return this.onJoinedMeeting();
         case 'left-meeting':
-          return this.endMeeting();
+          return this.cleanup();
         case 'error':
-          console.log('ignore error');
+          await this.cleanup();
           break;
       }
     };
     handleNewMeetingState();
     for (const event of events) {
       this.call.on(event, handleNewMeetingState);
+    }
+  }
+
+  private removeEventListeners() {
+    if (!this.call) return;
+    const events: DailyEvent[] = [
+      'available-devices-updated',
+      'app-message',
+      'track-started',
+      'participant-left',
+      'joined-meeting',
+      'left-meeting',
+      'error',
+    ];
+    for (const event of events) {
+      this.call.off(event, (e: any) => console.log('Off ', e));
     }
   }
 
@@ -236,16 +251,7 @@ export default class Vapi extends VapiEventEmitter {
         assistantId: typeof assistant === 'string' ? assistant : undefined,
       })
     ).data;
-
-    // const webCall = await apiClient.call.callControllerCreateWebCall({
-    //   assistant: typeof assistant === 'string' ? undefined : assistant,
-    //   assistantId: typeof assistant === 'string' ? assistant : undefined,
-    // });
-
-    // const roomUrl = webCall.url;
     const roomUrl = webCall.webCallUrl;
-
-    console.log('roomUrl: ', roomUrl);
 
     if (!roomUrl) {
       throw new Error('webCallUrl is not available');
@@ -274,6 +280,7 @@ export default class Vapi extends VapiEventEmitter {
   stop(): void {
     this.cleanup();
   }
+
   send(message: VapiClientToServerMessage): void {
     this.call?.sendAppMessage(JSON.stringify(message));
   }
