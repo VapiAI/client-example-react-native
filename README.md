@@ -1,79 +1,143 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Vapi React Native SDK
 
-# Getting Started
+This package lets you start Vapi calls directly in your React native.
 
->**Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
+## Installation
 
-## Step 1: Start the Metro Server
-
-First, you will need to start **Metro**, the JavaScript _bundler_ that ships _with_ React Native.
-
-To start Metro, run the following command from the _root_ of your React Native project:
+You can install the package via npm:
 
 ```bash
-# using npm
-npm start
-
-# OR using Yarn
-yarn start
+npm install @vapi-ai/react-native
 ```
 
-## Step 2: Start your Application
+## Usage
 
-Let Metro Bundler run in its _own_ terminal. Open a _new_ terminal from the _root_ of your React Native project. Run the following command to start your _Android_ or _iOS_ app:
+First, import the Vapi class from the package:
 
-### For Android
-
-```bash
-# using npm
-npm run android
-
-# OR using Yarn
-yarn android
+```javascript
+import Vapi from '@vapi-ai/react-native';
 ```
 
-### For iOS
+Then, create a new instance of the Vapi class, passing your Public Key as a parameter to the constructor:
 
-```bash
-# using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
+```javascript
+const vapi = new Vapi('your-public-key');
 ```
 
-If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
+You can start a new call by calling the `start` method and passing an `assistant` object or `assistantId`:
 
-This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
+```javascript
+vapi.start({
+  model: {
+    provider: "openai",
+    model: "gpt-3.5-turbo",
+    messages: [
+      {
+        role: "system",
+        content: "You are an assistant.",
+      },
+     ],
+   }
+   voice: {
+    provider: "11labs",
+    voiceId: "burt",
+  },
+  ...
+});
+```
+```javascript
+vapi.start('your-assistant-id');
+```
 
-## Step 3: Modifying your App
+The `start` method will initiate a new call.
 
-Now that you have successfully run the app, let's modify it.
+You can also send text messages to the assistant aside from the audio input using the `send` method and passing appropriate `role` and `content`.
 
-1. Open `App.tsx` in your text editor of choice and edit some lines.
-2. For **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Developer Menu** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (on Window and Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (on macOS)) to see your changes!
+```javascript
+vapi.send({
+  type: "add-message",
+  message: {
+    role: "system",
+    content: "The user has pressed the button, say peanuts",
+  },
+});
 
-   For **iOS**: Hit <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> in your iOS Simulator to reload the app and see your changes!
+```
 
-## Congratulations! :tada:
+Possible values for the role are `system`, `user`, `assistant`, `tool` or `function`.
 
-You've successfully run and modified your React Native App. :partying_face:
+You can stop the session by calling the `stop` method:
 
-### Now what?
+```javascript
+vapi.stop();
+```
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [Introduction to React Native](https://reactnative.dev/docs/getting-started).
+This will stop the recording and close the connection.
 
-# Troubleshooting
+The `setMuted(muted: boolean)` can be used to mute and un-mute the user's microphone.
 
-If you can't get this to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+```javascript
+vapi.isMuted(); // false
+vapi.setMuted(true);
+vapi.isMuted(); // true
+```
 
-# Learn More
+## Events
 
-To learn more about React Native, take a look at the following resources:
+You can listen to the following events:
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+```javascript
+vapi.on('speech-start', () => {
+  console.log('Speech has started');
+});
+
+vapi.on('speech-end', () => {
+  console.log('Speech has ended');
+});
+
+vapi.on('call-start', () => {
+  console.log('Call has started');
+});
+
+vapi.on('call-end', () => {
+  console.log('Call has stopped');
+});
+
+// Function calls and transcripts will be sent via messages
+vapi.on('message', (message) => {
+  console.log(message);
+});
+
+vapi.on('error', (e) => {
+  console.error(e)
+});
+```
+
+These events allow you to react to changes in the state of the call or speech.
+
+
+## License
+
+```
+MIT License
+
+Copyright (c) 2023 Vapi Labs Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```

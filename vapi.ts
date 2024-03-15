@@ -1,5 +1,3 @@
-/* eslint-disable no-catch-shadow */
-/* eslint-disable @typescript-eslint/no-shadow */
 import type { OpenAI } from 'openai';
 import EventEmitter from 'events';
 import Daily, {
