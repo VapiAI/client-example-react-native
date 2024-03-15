@@ -1,143 +1,26 @@
-# Vapi React Native SDK
+# Vapi React Native Integration Starter Template
 
-This package lets you start Vapi calls directly in your React native.
+This starter template is designed to help you quickly integrate Vapi into your react native project. It showcases a bot that assists authors in defining characters for their stories, demonstrating the ease of integrating Vapi to manipulate the frontend, display backend results, and leverage other capabilities.
 
-## Installation
+## Features
 
-You can install the package via npm:
+- **Real-time Interaction**: Interact with the bot in real-time to refine character traits and details.
+- **Message Handling**: Send and receive messages to and from the bot, handling different message types.
+- **Event Handling**: Start, stop, and toggle bot calls with proper event management.
 
-```bash
-npm install @vapi-ai/react-native
-```
+## Getting Started
 
-## Usage
+1. Clone the repository.
+2. Install dependencies with `npm install`.
+3. Install iOS pods with `npx pod-install`
+3. Set up your `.env` file with the required Vapi tokens.
+4. Run the local server with `npm start -- --reset-cache`.
 
-First, import the Vapi class from the package:
+## Integration Points
 
-```javascript
-import Vapi from '@vapi-ai/react-native';
-```
+- **Vapi SDK**: Integrated via `vapi.sdk.ts` to manage the Vapi instance.
+- **React Hooks**: `useVapi.ts` to encapsulate Vapi logic within React components.
+- **Event Listeners**: Set up listeners for various Vapi events like speech start/end, call start/end, and message updates.
+- **Message Components**: Render messages and transcripts in real-time as they are received from the bot.
+- **Character Details**: Edit and save character details, which are then sent as messages to the bot for processing.
 
-Then, create a new instance of the Vapi class, passing your Public Key as a parameter to the constructor:
-
-```javascript
-const vapi = new Vapi('your-public-key');
-```
-
-You can start a new call by calling the `start` method and passing an `assistant` object or `assistantId`:
-
-```javascript
-vapi.start({
-  model: {
-    provider: "openai",
-    model: "gpt-3.5-turbo",
-    messages: [
-      {
-        role: "system",
-        content: "You are an assistant.",
-      },
-     ],
-   }
-   voice: {
-    provider: "11labs",
-    voiceId: "burt",
-  },
-  ...
-});
-```
-```javascript
-vapi.start('your-assistant-id');
-```
-
-The `start` method will initiate a new call.
-
-You can also send text messages to the assistant aside from the audio input using the `send` method and passing appropriate `role` and `content`.
-
-```javascript
-vapi.send({
-  type: "add-message",
-  message: {
-    role: "system",
-    content: "The user has pressed the button, say peanuts",
-  },
-});
-
-```
-
-Possible values for the role are `system`, `user`, `assistant`, `tool` or `function`.
-
-You can stop the session by calling the `stop` method:
-
-```javascript
-vapi.stop();
-```
-
-This will stop the recording and close the connection.
-
-The `setMuted(muted: boolean)` can be used to mute and un-mute the user's microphone.
-
-```javascript
-vapi.isMuted(); // false
-vapi.setMuted(true);
-vapi.isMuted(); // true
-```
-
-## Events
-
-You can listen to the following events:
-
-```javascript
-vapi.on('speech-start', () => {
-  console.log('Speech has started');
-});
-
-vapi.on('speech-end', () => {
-  console.log('Speech has ended');
-});
-
-vapi.on('call-start', () => {
-  console.log('Call has started');
-});
-
-vapi.on('call-end', () => {
-  console.log('Call has stopped');
-});
-
-// Function calls and transcripts will be sent via messages
-vapi.on('message', (message) => {
-  console.log(message);
-});
-
-vapi.on('error', (e) => {
-  console.error(e)
-});
-```
-
-These events allow you to react to changes in the state of the call or speech.
-
-
-## License
-
-```
-MIT License
-
-Copyright (c) 2023 Vapi Labs Inc.
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```

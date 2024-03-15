@@ -1,6 +1,4 @@
-// import { characterAssistant } from "@/assistants/character.assistant";
 import { useEffect, useState } from 'react';
-
 import { Message, MessageTypeEnum, TranscriptMessage, TranscriptMessageTypeEnum } from './lib/types/conversation.type';
 import vapi from './vapi.sdk';
 
