@@ -11,10 +11,10 @@
     "test": "jest"
   },
   "dependencies": {
-    "@vapi-ai/react-native": "^0.1.1",
+    "@vapi-ai/react-native": "^0.1.9",
     "react": "18.2.0",
-    "@daily-co/react-native-daily-js": "^0.58.0",
-    "@daily-co/react-native-webrtc": "111.0.0-daily.2",
+    "@daily-co/react-native-daily-js": "^0.64.0",
+    "@daily-co/react-native-webrtc": "118.0.3-daily.2",
     "@react-native-async-storage/async-storage": "^1.22.3",
     "react-native-background-timer": "^2.4.1",
     "react-native-get-random-values": "^1.9.0",
